@@ -705,15 +705,18 @@ func (rt Handler) ICQDBQuery(ctx context.Context, instance *state.SessionInstanc
 		case wire.ICQDBQueryMetaReqDirectoryQuery, wire.ICQDBQueryMetaReqDirectoryUpdate:
 			rt.Logger.Debug("got a directory query/update request, not implemented yet")
 		default:
-			return fmt.Errorf("%w: %X", errUnknownICQMetaReqSubType, icqMD.Optional.ReqSubType)
-		}
-	default:
-		return fmt.Errorf("%w: %X", errUnknownICQMetaReqType, icqMD.ReqType)
-	}
-
-	return nil
+    rt.Logger.Warn("unsupported ICQ meta subtype ignored",
+        "req_subtype", fmt.Sprintf("%04X", icqMD.Optional.ReqSubType),
+        "uin", icqMD.Optional.UIN,
+    )
+    return nil
 }
-
+default:
+    rt.Logger.Warn("unsupported ICQ meta request ignored",
+        "req_type", fmt.Sprintf("%04X", icqMD.ReqType),
+    )
+    return nil
+}
 func (rt Handler) LocateRightsQuery(ctx context.Context, _ *state.SessionInstance, inFrame wire.SNACFrame, _ io.Reader, rw ResponseWriter) error {
 	outSNAC := rt.LocateService.RightsQuery(ctx, inFrame)
 	rt.LogRequestAndResponse(ctx, inFrame, nil, outSNAC.Frame, outSNAC.Body)
