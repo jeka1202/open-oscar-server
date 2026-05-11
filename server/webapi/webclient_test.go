@@ -1,7 +1,8 @@
 package webapi
 
 import (
-	"io/fs"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,8 +10,6 @@ import (
 )
 
 func TestWebClientFiles(t *testing.T) {
-	clientFiles := webClientFiles()
-
 	tests := []struct {
 		name string
 		path string
@@ -22,7 +21,7 @@ func TestWebClientFiles(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data, err := fs.ReadFile(clientFiles, tt.path)
+			data, err := os.ReadFile(filepath.Join(webClientDir(), tt.path))
 			require.NoError(t, err)
 			assert.NotEmpty(t, data)
 		})
@@ -30,9 +29,7 @@ func TestWebClientFiles(t *testing.T) {
 }
 
 func TestWebClientAppIncludesCoreChatFeatures(t *testing.T) {
-	clientFiles := webClientFiles()
-
-	data, err := fs.ReadFile(clientFiles, "app.js")
+	data, err := os.ReadFile(filepath.Join(webClientDir(), "app.js"))
 	require.NoError(t, err)
 	app := string(data)
 
@@ -41,4 +38,10 @@ func TestWebClientAppIncludesCoreChatFeatures(t *testing.T) {
 	assert.Contains(t, app, "/presence/setState")
 	assert.Contains(t, app, "/im/sendIM")
 	assert.Contains(t, app, "localStorage")
+}
+
+func TestWebClientDirUsesEnvironmentOverride(t *testing.T) {
+	t.Setenv(webClientDirEnv, "/tmp/open-oscar-webclient")
+
+	assert.Equal(t, "/tmp/open-oscar-webclient", webClientDir())
 }

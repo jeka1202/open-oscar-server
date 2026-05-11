@@ -1,19 +1,29 @@
 package webapi
 
 import (
-	"embed"
-	"io/fs"
+	"net/http"
+	"os"
 )
 
-// webClientAssets contains the static browser client served from /client/.
-//
-//go:embed webclient/*
-var webClientAssets embed.FS
+const (
+	// webClientDirEnv optionally points the WebAPI server at a directory of
+	// static web client files. When unset, the repository-local client directory
+	// is used so local development works without extra configuration.
+	webClientDirEnv = "WEBCLIENT_DIR"
 
-func webClientFiles() fs.FS {
-	clientFiles, err := fs.Sub(webClientAssets, "webclient")
-	if err != nil {
-		panic(err)
+	defaultWebClientDir = "server/webapi/webclient"
+)
+
+func webClientDir() string {
+	if dir := os.Getenv(webClientDirEnv); dir != "" {
+		return dir
 	}
-	return clientFiles
+	if _, err := os.Stat(defaultWebClientDir); err == nil {
+		return defaultWebClientDir
+	}
+	return "webclient"
+}
+
+func webClientFileSystem() http.FileSystem {
+	return http.Dir(webClientDir())
 }
